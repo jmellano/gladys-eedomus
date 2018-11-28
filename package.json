@@ -1,0 +1,15 @@
+{
+  "name": "gladys-eedomus",
+  "version": "0.0.1",
+  "description": "this module enable gladys commununication with Eedomus Box",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "gladys",
+    "eedomus"
+  ],
+  "author": "Julien Mellano",
+  "license": "MIT"
+}
