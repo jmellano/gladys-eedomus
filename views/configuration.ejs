@@ -1,225 +1,111 @@
-<script src="/hooks/zwave/js/zwave.config.js"></script>
-<script src="/hooks/zwave/js/zwave.controller.js"></script>
-<script src="/hooks/zwave/js/zwave.service.js"></script>
+<script src="/hooks/eedomus/js/eedomus.config.js"></script>
+<script src="/hooks/eedomus/js/eedomus.controller.js"></script>
+<script src="/hooks/eedomus/js/eedomus.service.js"></script>
 
-<div data-ng-controller="ZwaveCtrl as vm">
+<div data-ng-controller="EedomusCtrl as vm">
     <div class="box skin-box box-default no-border ng-cloak">
         <div class="box-header with-border">
-            <h3 class="box-title">{{ 'NODES' | translate}}</h3>
-            <div class="box-tools pull-right">
-                <div class="btn-group">
-                    <button type="button" class="btn btn-primary btn-flat btn-sm dropdown-toggle" data-toggle="dropdown" aria-expanded="false">{{ 'NETWORK_MANAGEMENT' | translate }}</button>
-                    <ul class="dropdown-menu" role="menu">
-                    <li><a href="" ng-click="vm.addNode()" data-toggle="modal" data-target=".zwave-inclusionModal">{{ 'INCLUDE_NODE' | translate }}</a></li>
-                    <li><a href="" ng-click="vm.removeNode()" data-toggle="modal" data-target=".zwave-exclusionModal">{{ 'EXCLUDE_NODE' | translate }}</a></li>
-                    <li><a href="" ng-click="vm.healNetwork()">{{ 'HEAL_NETWORK' | translate }}</a></li>
-                    <li class="divider"></li>
-                    <li><a href="" ng-click="vm.getPorts()" data-toggle="modal" data-target=".zwave-initializePort">{{ 'CONFIGURE_CONTROLLER' | translate }}</a></li>
-                    <li><a href="" ng-click="vm.softReset()">{{ 'RESTART_CONTROLLER' | translate }}</a></li>
-                    </ul>
+            <h3 class="box-title">{{ 'VARIABLES' | translate}}</h3>
+        </div>
+        <div class="box-body">
+            <div class="row">
+                <div class="col-centered col-md-6">
+                    <div class="form-group">
+                        <label for="eedomusHost" class="col-sm-5 control-label">Adresse IP Box Eedomus</label>
+                        <div class="col-md-7">
+                            <input id="eedomusHost" ng-model-options='{ debounce: 500 }' ng-change="vm.updateHost();" ng-model="vm.eedomusHost" class="form-control ng-pristine ng-untouched ng-empty" placeholder="192.168.XX.XX">
+                        </div>
+                        <label for="userApi" class="col-sm-5 control-label">Utilisateur Eedomus (API)</label>
+                        <div class="col-md-7">
+                            <input id="userApi" ng-model="vm.eedomusUser" ng-model-options='{ debounce: 500 }' ng-change="vm.updateUser();" class="form-control ng-pristine ng-untouched ng-empty" placeholder="Utilisateur Eedomus (API)">
+                        </div>
+                        <label for="secretApi" class="col-sm-5 control-label">code secret</label>
+                        <div class="col-md-7">
+                            <input id="secretApi" ng-model-options='{ debounce: 500 }' ng-change="vm.updateSecret();" ng-model="vm.eedomusSecret" class="form-control ng-pristine ng-untouched ng-empty" placeholder="code secret">
+                        </div>
+                    </div>
                 </div>
+                <button class="btn btn-flat btn-success" disabled="disabled">Tester la connexion</button>
             </div>
         </div>
         <div class="box-body">
-
-            <div ng-show="vm.nodesIsEmpty">
-                <h4 class="text-center" style="padding: 20px">{{ 'EMPTY_NODE_TABLE' | translate}}</h4>
-            </div>
-
-            <div class="row" ng-show="!vm.nodesReady && !vm.nodesIsEmpty">
-                <div class="col-centered col-md-4 col-md-offset-4">
-                    <div class="spinner-box">
-                        <div class="spinner">
-                            <div class="double-bounce1"></div>
-                            <div class="double-bounce2"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <table class="table" ng-show="vm.nodesReady && !vm.nodesIsEmpty">
-                <thead>
-                    <tr>
-                        <th>{{ 'NODE_ID' | translate }}</th>
-                        <!--<th>{{ 'NAME' | translate }}</th>-->
-                        <th>{{ 'TYPE' | translate }}</th>
-                        <th>{{ 'MANUFACTURER' | translate }}</th>
-                        <th>{{ 'PRODUCT' | translate }}</th>
-                        <th>{{ 'CONFIGURATION' | translate }}</th>
-                    </tr>
-                </thead>
-                <tbody>      
-                    <tr ng-repeat="node in vm.nodes" class="ng-cloak">
-                        <td>{{node.info_node.node_id}}</td>
-                        <!--<td>
-                            <input class="form-control input-sm" type="text" ng-model="node.info_node.name" ng-change="vm.setNodeName(node.info_node.node_id, node.info_node.name)">
-                        </td>-->
-                        <td>{{node.info_node.type}}</td>
-                        <td>{{node.info_node.manufacturer}}</td>
-                        <td>{{node.info_node.product}}</td>
-                        <td>
-                            <button class="btn btn-flat btn-primary" data-toggle="modal" data-target=".zwave-configModal" ng-click="vm.getNodeParams(node.info_node.node_id)">{{ 'CONFIGURATION' | translate }}</button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="modal fade zwave-configModal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
-                    <h4 class="modal-title">{{ 'NODE_CONFIGURATION' | translate}}</h4>
-                </div>
-                <div class="modal-body">
-
-                    <div class="row" ng-show="!vm.paramsReady">
-                        <div class="col-centered col-md-4 col-md-offset-4">
-                            <div class="spinner-box">
-                                <div class="spinner">
-                                    <div class="double-bounce1"></div>
-                                    <div class="double-bounce2"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div ng-repeat="param in vm.selectedNodeParams" ng-show="vm.paramsReady">
-                        <div class="row">
-                            <div class="col-lg-4">
-                                <strong>{{param.index}} - {{param.label}}</strong>
-                            </div>
-                            <div class="col-lg-8">
-                                <div class="row" ng-if="param.type != 'list'">
-                                    <div class="col-lg-3">
-                                        <input class="form-control input-sm" type="text" 
-                                                ng-init="value = vm.selectedNodeParams[$index].value" 
-                                                value="{{value}}" 
-                                                ng-model="value" 
-                                                ng-change="vm.selectedNodeParams[$index].value = value">
-                                    </div>
-                                    <div class="col-lg-9">
-                                        <span  ng-show="param.units != ''">({{param.units}})</span>
-                                    </div>
-                                </div>
-                                <div class="row" ng-if="param.type == 'list'">
-                                    <div class="col-lg-6">
-                                        <select class="form-control"
-                                                ng-model="selectedItem"
-                                                ng-init="vm.selectedNodeParams[$index].value = param.values.indexOf(param.value); selectedItem = vm.selectedNodeParams[$index].value"
-                                                ng-change="vm.selectedNodeParams[$index].value = selectedItem"
-                                                ng-options="param.values.indexOf(selectedItem) as selectedItem for selectedItem in param.values">
-                                        </select>
-                                    </div>
-                                    <div class="col-lg-6">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <br>
-                        <p class="text-muted">{{param.help}}</p>
-                        <hr>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary btn-flat" ng-click="vm.setNodeParam()">{{ 'APPLY_CONFIGURATION' | translate }}</button>
+            <div class="row">
+                <div class="col-centered col-md-6">
+                    <a href="" ng-click="vm.findEedomusDevices()">
+                        <button class="btn btn-flat btn-info">{{ 'FIND_DEVICES' | translate}}</button>
+                    </a>
                 </div>
             </div>
         </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>{{ 'EEDOMUS_ID' | translate }}</th>
+                    <th>{{ 'EEDOMUS_NAME' | translate }}</th>
+                    <th>{{ 'EEDOMUS_ROOM' | translate }}</th>
+                    <th>{{ 'EEDOMUS_ADD' | translate }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="device in vm.devices" class="ng-cloak">
+                    <td>{{device.periph_id}}</td>
+                    <td>{{device.name}}</td>
+                    <td>{{device.room.name}}</td>
+                    <td>
+                        <a href="" data-toggle="modal" data-target=".eedomus-inclusion" ng-click="vm.selectDevice(device.periph_id, device.name)">
+                            <button ng-disabled="device.exist" class="btn btn-flat btn-success">{{ 'EEDOMUS_ADD' | translate}}</button>
+                        </a>
+                        <a href="" ng-click="vm.deleteDevice(device.id)">
+                            <button class="btn btn-flat btn-danger" ng-disabled="!device.exist" >{{ 'EEDOMUS_REMOVE' | translate}}</button>
+                        </a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 
-    <div class="modal fade zwave-inclusionModal" tabindex="-1" role="dialog" aria-hidden="true">
+
+    <div class="modal fade eedomus-inclusion" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">×</span>
                     </button>
-                    <h4 class="modal-title">{{ 'INCLUDING_NODE' | translate }}</h4>
+                    <h3 class="modal-title">{{ 'EEDOMUS_MODAL_ADD' | translate }} {{vm.selectedDevice.name}} ({{vm.selectedDevice.eedomusId}})</h4>
                 </div>
                 <div class="modal-body">
                     <div>
-                        <span  class="text-center" style="padding: 20px">{{ 'INCLUSION_PROCEDURE' | translate }}</span>
-                    </div>
-                    <div class="row">
-                        <div class="col-centered col-md-4 col-md-offset-4">
-                            <h2 class="text-center">{{vm.timeLeft}}</h2>
+                        <div class="col-centered col-md-6">
+                            <h4 class="modal-title">{{ 'EEDOMUS_ROOM' | translate }} </h4>
+                        </div>
+                        <div class="col-centered col-md-6">
+                            <select ng-model="vm.roomSelected" class="form-control ng-pristine ng-valid ng-empty ng-touched" data-toggle="tooltip" data-original-title="Sélectionnez la maison associé à la pièce" ng-options="room as room.name for room in vm.rooms track by room.name">
+                            </select>
                         </div>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger btn-flat" data-dismiss="modal" ng-click="vm.addNode()">{{ 'CANCEL' | translate }}</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade zwave-exclusionModal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
-                    <h4 class="modal-title">{{ 'EXCLUDING_NODE' | translate }}</h4>
-                </div>
-                <div class="modal-body">
-                    <div>
-                        <span  class="text-center" style="padding: 20px">{{ 'EXCLUSION_PROCEDURE' | translate }}</span>
-                    </div>
-                    <div class="row">
-                        <div class="col-centered col-md-4 col-md-offset-4">
-                            <h2 class="text-center">{{vm.timeLeft}}</h2>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger btn-flat" data-dismiss="modal" ng-click="vm.removeNode()">{{ 'CANCEL' | translate }}</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade zwave-initializePort" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
-                    <h4 class="modal-title">{{ 'CONFIGURATION_CONTROLLER' | translate }}</h4>
-                </div>
-                <div class="modal-body">
-                    <div>
-                        <p class="text-center">{{ 'CONFIGURATION_CONTROLLER_TEXT' | translate }}</p>
-                    </div>
-                    <hr>
-                    <table class="table ng-cloak">
+                    <table class="table">
                         <thead>
                             <tr>
-                                <th>{{ 'MANUFACTURER' | translate }}</th>
-                                <th>{{ 'PRODUCT_ID' | translate }}</th>
-                                <th>{{ 'COM_NAME' | translate }}</th>
+                                <th>{{ 'EEDOMUS_VALUE' | translate }}</th>
+                                <th>{{ 'EEDOMUS_DESCRIPTION' | translate }}</th>
+                                <!-- <th>{{ 'EEDOMUS_DEVICE_OFF' | translate }}</th>
+                                <th>{{ 'EEDOMUS_DEVICE_ON' | translate }}</th> -->
                             </tr>
                         </thead>
-                        <tbody>      
-                            <tr ng-repeat="port in vm.ports" class="ng-cloak">
-                                <td>{{port.manufacturer}}</td>
-                                <td>{{port.productId}}</td>
-                                <td>{{port.comName}}</td>
-                                <td><input type="radio" name="radio" id="optionsRadios" value="value" ng-click="vm.selectedPort = port"></td>
+                        <tbody>
+                            <tr ng-repeat="info in vm.selectedDevice.result.eedomusInformations.body.values" class="ng-cloak">
+                                <td>{{info.value}}</td>
+                                <td>{{info.description}}</td>
+                                <!-- <td><input type="radio" name="offGroup" ng-model="vm.selectedDevice.offValue" /></td>
+                                <td><input type="radio" name="onGroup" ng-model="vm.selectedDevice.onValue" /></td> -->
                             </tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary btn-flat" data-dismiss="modal" ng-click="vm.setPort()">{{ 'APPLY' | translate }}</button>
-                    <button type="button" class="btn btn-success btn-flat" ng-click="vm.getPorts()">{{ 'SCAN' | translate }}</button>
-                    <button type="button" class="btn btn-danger btn-flat" data-dismiss="modal">{{ 'CANCEL' | translate }}</button>
+                    <button type="button" class="btn btn-danger btn-flat" data-dismiss="modal" ng-click="vm.removeNode()">{{ 'CANCEL' | translate }}</button>
+                    <button type="button" class="btn btn-success btn-flat" data-dismiss="modal" ng-click="vm.addDevice(vm.selectedDevice, vm.roomSelected)">{{ 'EEDOMUS_ADD' | translate }}</button>
                 </div>
             </div>
         </div>
